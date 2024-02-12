@@ -101,7 +101,7 @@ int main(int argc, const char *argv[])
 {
     double p = 1;
     int n = 5;
-    int x = 1, y = 2, z = 3;
+    int x = 2, y = 1, z = 3;
 
     log_printf("prob.csv", "p,x,y,z\n");
     pid_t root_pid = getpid();
