@@ -1,20 +1,21 @@
-CXXFLAGS=-O -g -std=c++17
+CXXFLAGS=-O -g -std=c++20
 CFLAGS=-O -g
+LDFLAGS=-lm
 
 .PHONY: build
 build : carithmetic cpparithmetic cgeometric cppgeometric
 
 carithmetic : arithmetic.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 cpparithmetic : arithmetic.cpp averager.h
-	$(CXX) $(CXXFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
 cgeometric : geometric.c
-	$(CC) $(CFLAGS) -o $@ $<
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
 
 cppgeometric : geometric.cpp averager.h
-	$(CXX) $(CXXFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
 
 .PHONY: run
 run : run-carithmetic run-cpparithmetic run-cgeometric run-cppgeometric
