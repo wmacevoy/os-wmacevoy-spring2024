@@ -11,10 +11,13 @@ void testArithmeticAverager() {
 
   ArithmeticAverager<double,32> averager;
 
+  ArithmeticAverager<int64_t,32> averager64;
+  
   for (int it=0; it<samples; ++it) {
     double t = double(it)/samplesPerSecond;
     double value = sin(omega*t);
     averager.sample(value);
+    averager64.sample(value*pow(2,32));    
   }
 
   // explicit average to compare
@@ -29,6 +32,7 @@ void testArithmeticAverager() {
   assert(fabs(average-averager.average()) < 1e-9);
 
   std::cout << "arithmetic average is " << averager.average() << std::endl;
+  std::cout << "arithmetic average is " << averager64.average()/pow(2,32) << std::endl;  
 }
 
 int main() {
