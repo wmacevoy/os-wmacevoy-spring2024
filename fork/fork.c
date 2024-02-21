@@ -30,11 +30,15 @@ int main() {
         // Child process
         printf("Child Process: PID = %d, Parent's PID = %d\n", getpid(), getppid());
         printf("Child process working before exec...");
+        state = 100;
+
+        printf("state for pid %d is %d at line %d\n",getpid(),state,__LINE__);
+
         sleep(4);
         printf("done.\n");
 
         // Replace the child process with a new program, for example "/bin/ls"
-        execl("/usr/bin/bash", "bash","-c","echo $$", NULL); // Executes "bash" and reports its procces id
+        execl("/bin/bash", "bash","-c","echo $$", NULL); // Executes "bash" and reports its procces id
 
         // execl only returns if there is an error
         perror("execl");
