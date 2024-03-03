@@ -1,0 +1,40 @@
+name: C++ Build Test
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up GCC
+      uses: actions/setup-gcc@v1
+      with:
+        gcc-version: '11'
+      if: matrix.os != 'windows-latest'
+
+    - name: Set up MinGW (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install mingw
+        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
+
+    - name: Install dependencies (Linux and macOS)
+      if: matrix.os != 'windows-latest'
+      run: sudo apt-get update && sudo apt-get install -y make
+
+    - name: Install dependencies (Windows)
+      if: matrix.os == 'windows-latest'
+      run: choco install make
+
+    - name: Build and Test
+      run: make -C memory test
+
+    - name: Success Message
+      run: echo "Build and tests passed on all platforms."
