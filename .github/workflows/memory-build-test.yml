@@ -13,25 +13,33 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up GCC
-      uses: actions/setup-gcc@v1
-      with:
-        gcc-version: '11'
-      if: matrix.os != 'windows-latest'
+    - name: Install GCC (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get update && sudo apt-get install -y g++
 
-    - name: Set up MinGW (Windows)
+    - name: Install GCC (macOS)
+      if: matrix.os == 'macOS-latest'
+      run: brew install gcc
+
+    - name: Install GCC (Windows)
       if: matrix.os == 'windows-latest'
       run: |
         choco install mingw
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
 
-    - name: Install dependencies (Linux and macOS)
-      if: matrix.os != 'windows-latest'
+    - name: Install GCC (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
       run: sudo apt-get update && sudo apt-get install -y make
 
-    - name: Install dependencies (Windows)
+    - name: Install GCC (macOS)
+      if: matrix.os == 'macOS-latest'
+      run: brew install make
+
+    - name: Install GCC (Windows)
       if: matrix.os == 'windows-latest'
-      run: choco install make
+      run: |
+        choco install make
+        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
 
     - name: Build and Test
       run: make -C memory test
