@@ -1,17 +1,33 @@
 #include <iostream>
 #include <unistd.h>
 #include <signal.h>
+#include <cassert>
 
-#include "randomize.h"
-#include "canary.h"
+#include "securearray.h"
 
 void checked(bool ok) {
+  constexpr size_t size = 32;
   std::cout << "checked(ok=" << ok << ")" << std::endl;
-  
-  Canary canary;
-  if (!ok) {
-    randomize(canary);
+  float *p = 0;
+
+  {
+    SecureArray<float,size> secf;
+    
+    // for reference to data secton after secf is cleaned off of stack,
+    // just to test that the memory has been cleared.
+    p = &secf.data[0]; 
+    for (int i=0; i<size; ++i) { assert(p[i] == float(0.0)); }
+    if (!ok) {
+      double *d = (double*)&secf.data;
+      for (int i=0; i<size; ++i) { d[i]=sqrt(i); }
+    } else {
+      float *f = (float*)&secf.data;
+      for (int i=0; i<size; ++i) { f[i]=sqrt(i); }
+    }
   }
+  // ISR could make this fail, because it would reuse the frame memory,
+  // data is reset to zero when securedata is destroyed.
+  for (int i=0; i<size; ++i) { assert(p[i] == float(0.0)); }
 }
 
 void safe(bool ok) {
@@ -66,7 +82,6 @@ void testSafe(bool ok) {
 
 int main(int argc, const char *argv[]) {
   { bool ok = true;  testSafe(ok); }
-  { bool ok = false; testSafe(ok); }
-  
+  { bool ok = false;  testSafe(ok); }
   return 0;
 }
