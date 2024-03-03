@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <cassert>
+#include <cmath>
 
 #include "securedata.h"
 
@@ -19,12 +20,12 @@ void checked(bool ok) {
     if (!ok) {
       double *d = (double*)&secf.data;
       // because of word alignment, this one does not corrupt the canary
-      d[0]=sqrt(2.0);
+      d[0]=std::sqrt(2.0);
       // this one corrupts the canary
-      d[1]=sqrt(3.0);
+      d[1]=std::sqrt(3.0);
     } else {
       float* f = (float*)&secf.data;
-      f[0]=sqrt(2.0);
+      f[0]=std::sqrt(2.0);
       assert(*p == float(sqrt(2.0)));
     }
   }

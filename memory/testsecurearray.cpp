@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <cassert>
+#include <cmath>
 
 #include "securearray.h"
 
@@ -19,10 +20,10 @@ void checked(bool ok) {
     for (int i=0; i<size; ++i) { assert(p[i] == float(0.0)); }
     if (!ok) {
       double *d = (double*)&secf.data;
-      for (int i=0; i<size; ++i) { d[i]=sqrt(i); }
+      for (int i=0; i<size; ++i) { d[i]=std::sqrt(i); }
     } else {
       float *f = (float*)&secf.data;
-      for (int i=0; i<size; ++i) { f[i]=sqrt(i); }
+      for (int i=0; i<size; ++i) { f[i]=std::sqrt(i); }
     }
   }
   // ISR could make this fail, because it would reuse the frame memory,
