@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 ifeq ($(OS),Windows_NT)
 #    SHELL := C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin/bash
-    LDFLAGS=-lbcrypt
+    LDFLAGS=-lbcrypt -Wl,--subsystem,console
 else
 # nop
 endif
