@@ -93,7 +93,7 @@ int cli(const std::vector <std::string> &args) {
   if (childPid == 0) {
     char *arge[args.size()+1-2];
     for (int i=2; i<args.size(); ++i) {
-      arge[i-2]=args[i].c_str();
+      arge[i-2]=(char *) args[i].c_str();
     }
     arge[args.size()-2]=NULL;
     execv(arge[0],arge);
