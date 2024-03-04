@@ -4,9 +4,7 @@
 #include <vector>
 
 #ifdef _WIN32
-#include <sstream>
 #include <windows.h>
-#include <codecvt>
 #else
 #include <unistd.h>
 #include <signal.h>
@@ -17,7 +15,6 @@
 
 int cli(const std::vector <std::string> &args);
 
-#ifndef _WIN32
 int main(int argc, char *argv[]) {
   std::vector<std::string> args;
   for (int argi=0; argi<argc; ++argi) {
@@ -25,110 +22,70 @@ int main(int argc, char *argv[]) {
   }
   return cli(args);
 }
-#else
-std::wstring wstrFromStr(const std::string &str) {
-  size_t size = MultiByteToWideChar( CP_UTF8 , 0 , str.c_str() , -1, NULL , 0 );
-  std::wstring ans(size,0);
-  MultiByteToWideChar( CP_UTF8 , 0 , str.c_str() , -1, &ans[0] , size);
-  return ans;
-}
 
-std::string strFromWstr(const std::wstring& wstr)
-{
-  size_t size = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
-  std::string ans(size,0);
-  WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(),-1, &ans[0], ans.size(), NULL,NULL);
-  return ans;
-}
 
-#ifdef UNICODE
-using sysstring = std::wstring;
-sysstring sysstr(const std::wstring &wstr) {
-  return wstr;
-}
-sysstring sysstr(const std::string &str) {
-  return wstrFromStr(str);
-}
-std::string str(const sysstring &sstr) {
-  return strFromWstr(sstr);
-}
-std::wstring wstr(const sysstring &sstr) {
-  return sstr;
-}
+int cli(const std::vector <std::string> &args) {
+    if (args.size() < 3) {
+        std::cerr << "Insufficient arguments" << std::endl;
+        return 2;
+    }
+    int returnCode = 1;
+    bool ok = args.at(1) == "pass";
 
-#define WinMain wWinMain
-#else
-using sysstring = std::string;
-sysstring sysstr(const std::wstring &wstr) {
-  return strFromWstr(wstr);
-}
-sysstring sysstr(const std::string &str) {
-  return str;
-}
-
-std::string str(const sysstring &sstr) {
-  return sstr;
-}
-std::wstring wstr(const sysstring &sstr) {
-  return wstrFromStr(sstr);
-}
-
-#endif
-
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, sysstring::value_type *pCmdLine, int nCmdShow) {
-  std::vector < std::string > args;
-  sysstring sysCmdLine = pCmdLine;
-  std::string cmdLine = str(sysCmdLine);
-
-  args.push_back("monitor");
-  std::istringstream iss(cmdLine);
-  std::string arg;
-  while (iss >> arg) {
-    std::cout << "win32 arg[" << args.size() << "]=" << arg << std::endl;
-    args.push_back(arg);
-  }
-  return cli(args);
-}
-#endif
-
-int cli(const std::vector <std::string> &args)
-{
-  int returnCode = 1;
-  bool ok = args.at(1) == "pass";
-  
 #ifdef _WIN32
-  std::cout << "win32 monitor" << std::endl;
 
-  sysstring cmd;
-  for (int i=2; i<args.size(); ++i) {
-    if (i > 2) { cmd += ' '; }
-    cmd += sysstr(args[i]);
-  }
-  STARTUPINFO si = { sizeof(si) };
-  PROCESS_INFORMATION pi;
+    // Concatenate arguments from args[2] onwards
+    std::string cmdLine;
+    for (size_t i = 2; i < args.size(); ++i) {
+        cmdLine += args[i];
+        if (i < args.size() - 1) {
+            cmdLine += " "; // Add space between arguments
+        }
+    }
 
-  std::cout << "win32 create process cmd=" << str(cmd) << std::endl;
+    // Convert command line to wide string for CreateProcess
+    int bufferSize = MultiByteToWideChar(CP_UTF8, 0, cmdLine.c_str(), -1, nullptr, 0);
+    wchar_t* wCmdLine = new wchar_t[bufferSize];
+    MultiByteToWideChar(CP_UTF8, 0, cmdLine.c_str(), -1, wCmdLine, bufferSize);
 
-  BOOL success = CreateProcess(NULL,(sysstring::value_type*) cmd.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+    STARTUPINFOW si = { sizeof(si) };
+    PROCESS_INFORMATION pi;
+    
+    // Create the process
+    BOOL success = CreateProcessW(NULL,   // Application name
+                                   wCmdLine, // Command line (arguments)
+                                   NULL,   // Process handle not inheritable
+                                   NULL,   // Thread handle not inheritable
+                                   FALSE,  // Set handle inheritance to FALSE
+                                   0,      // No creation flags
+                                   NULL,   // Use parent's environment block
+                                   NULL,   // Use parent's starting directory 
+                                   &si,    // Pointer to STARTUPINFO structure
+                                   &pi);   // Pointer to PROCESS_INFORMATION structure
 
-  if (success) {
-    // Wait for the child process to exit
+    delete[] wCmdLine; // Clean up the wide string
+
+    if (!success) {
+        std::cerr << "CreateProcess failed (" << GetLastError() << ")" << std::endl;
+        return 2;
+    }
+
+    // Wait for the process to complete
     WaitForSingleObject(pi.hProcess, INFINITE);
 
+    // Get the exit code
     DWORD exitCode;
-    if (GetExitCodeProcess(pi.hProcess, &exitCode)) {
-      int expect = ok ? 0 : 3221225781;
-      std::cout << "monitor " << pi.hProcess << " code " << exitCode << " (expected " << expect << ")"
-		<< " -- " << ( exitCode == expect ? "pass" : "fail" ) << std::endl;
-      if (exitCode == expect) {
-	returnCode = 0;
-      }
+    if (!GetExitCodeProcess(pi.hProcess, &exitCode)) {
+        std::cerr << "GetExitCodeProcess failed (" << GetLastError() << ")" << std::endl;
     } else {
-      std::cout << "win32 get exit code failed" << std::endl;
+        std::cout << "Process exited with code " << exitCode << " ok=" << ok << std::endl;
+        returnCode = ((exitCode == 0 && ok) || (exitCode != 0 && !ok)) ? 0 : 1;
+        std::cout << "returnCode=" << returnCode << std::endl;
     }
-  } else {
-    std::cout << "win32 process creation failed" << std::endl;
-  }
+
+    // Close process and thread handles
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
 #else
   std::cout << "unix monitor" << std::endl;
 
@@ -166,6 +123,7 @@ int cli(const std::vector <std::string> &args)
       }
     }
   }
+
 #endif
 
   return returnCode;
