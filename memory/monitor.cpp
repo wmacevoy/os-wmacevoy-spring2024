@@ -19,14 +19,17 @@ int main(int argc, char *argv[]) {
   std::string cmd;
   for (int i=2; i<argc; ++i) {
     if (i > 2) { cmd += " "; }
-    cmd += args[i];
+    cmd += argv[i];
   }
+
+  char *c_cmd = (char*) malloc(cmd.size() + 1);
+  strcpy(c_cmd,cmd.c_str());
 
   
   STARTUPINFO si = { sizeof(si) };
   PROCESS_INFORMATION pi;
 
-  BOOL success = CreateProcess(NULL,cmd.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+  BOOL success = CreateProcess(NULL,c_cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
 
   if (success) {
     // Wait for the child process to exit
