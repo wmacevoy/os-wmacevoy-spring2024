@@ -28,24 +28,16 @@ jobs:
         echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" >> $GITHUB_PATH
 
     - name: Build and Test Randomize
-      run: |
-        make -C memory testrandomize
-        ./testrandomize
+      run: make -C memory test-randomize
 
     - name: Build and Test Canary
-      run: |
-        make -C memory testcanary
-        ./memory/testcanary ok=true
-        ./memory/testcanary ok=false
+      run: make -C memory test-canary
 
     - name: Build and Test SecureData
-      run: |
-        make -C memory testsecuredata
-        ./memory/testsecuredata ok=true
-        ./memory/testsecuredata ok=false
+      run: make -C memory test-securedata
 
-    - name: Build and Test
-      run: make -C memory test
+    - name: Build and Test SecureArray
+      run: make -C memory test-securearray
 
     - name: Success Message
       run: echo "Build and tests passed on all platforms."
