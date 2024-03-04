@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdint.h>
+#include <string.h>
 
 #include "securearray.h"
 
@@ -20,7 +21,7 @@ void checked(bool ok) {
 }
 
 int main(int argc, const char *argv[]) {
-  bool ok = (argc > 1 && std::strcmp(argv[1],"--ok=true") == 0);
+  bool ok = (argc > 1 && strcmp(argv[1],"--ok=true") == 0);
   std::cout << argv[0] << " " << "--ok=" << (ok ? "true" : "false") << std::endl;
   checked(ok);
   return 0;
