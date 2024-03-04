@@ -13,7 +13,7 @@
 
 int main(int argc, char *argv[]) {
   int returnCode = 1;
-  bool ok = (argc > 1 && std::strcmp(argv[1],"pass") == 0);
+  bool ok = (argc > 1 && strcmp(argv[1],"pass") == 0);
   
 #ifdef _WIN32
   std::string cmd;
