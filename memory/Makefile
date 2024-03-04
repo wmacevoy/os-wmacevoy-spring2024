@@ -1,8 +1,9 @@
+SHELL := /bin/bash
 ifeq ($(OS),Windows_NT)
-    SHELL := C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin/bash
+#    SHELL := C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin/bash
     LDFLAGS=-lbcrypt
 else
-    SHELL := /bin/bash
+# nop
 endif
 
 CXXFLAGS=-O -g -std=c++17
