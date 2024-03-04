@@ -37,10 +37,11 @@ int main(int argc, char *argv[]) {
 
     DWORD exitCode;
     if (GetExitCodeProcess(pi.hProcess, &exitCode)) {
-      if (exitCode == 3) {
-	returnCode = ok ? 1 : 0;
-      } else if (exitCode == 0) {
-	returnCode = ok ? 0 : 1;
+      int expect = ok ? 0 : 3;
+      std::cout << "monitor " << pi.hProcess << " code " << exitCode << " (expected " << expect << ")"
+		<< " -- " << ( exitCode == expect ? "pass" : "fail" ) << std::endl;
+      if (exitCode == expect) {
+	returnCode = 0;
       }
     }
   }
