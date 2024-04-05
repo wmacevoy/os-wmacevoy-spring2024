@@ -9,10 +9,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Update and install necessary packages
 RUN apt-get update && apt-get install -y \
-    dosfstools \      # For FAT32 and VFAT
-    ntfs-3g \         # For NTFS
-    veracrypt \       # For VeraCrypt
-    && rm -rf /var/lib/apt/lists/*  # Clean up
+    dosfstools \
+    ntfs-3g \
+    && rm -rf /var/lib/apt/lists/*
 
 # Your commands for file creation and manipulation go here
 # Example: Create a directory to work in
