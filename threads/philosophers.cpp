@@ -5,6 +5,9 @@
 #include <chrono>
 #include <functional>
 
+//
+// Console log as a shared resource; all threads access this log.
+//
 class Log {
 private:
   std::mutex mutex;
@@ -18,6 +21,9 @@ public:
 };
 
 Log logger(std::cout);
+
+// NOTE sends a single message to the logger
+#define NOTE(MSG) logger.note([&](auto &out) { out << MSG; })
 
 //
 // Fork is a shared resource - two philosophers will want to access each fork
@@ -47,8 +53,8 @@ public:
 class Philosopher {
 public:
   const int id;
-  volatile bool alive;
 private:
+  volatile bool alive;
   Fork::Ptr leftFork;
   Fork::Ptr rightFork;
   std::shared_ptr < std::thread > thread;
@@ -75,33 +81,27 @@ public:
 
 private:
   void live() {
-    logger.note([&](auto &out) { out << "Philosopher " << id << " is alive."; });
+    NOTE("Philosopher " << id << " is alive.");
     while (alive) {
       think();
       eat();
     }
-    logger.note([&](auto &out) { out << "Philosopher " << id << " is dead."; });
+    NOTE("Philosopher " << id << " is dead.");
   }
   
   void think() {
-    logger.note([&](auto &out) { out << "Philosopher " << id << " is thinking."; });
+    NOTE("Philosopher " << id << " is thinking.");
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
   
   void eat() {
-    logger.note([&](auto &out) { out << "Philosopher " << id << " is hungry."; });
+    NOTE("Philosopher " << id << " is hungry.");
     auto leftBaton = leftFork->pickup();
-    logger.note([&](auto &out) {
-      out << "Philosopher " << id << " got left fork " << leftFork->id << ".";
-    });
+    NOTE("Philosopher " << id << " got left fork " << leftFork->id << ".");
     auto rightBaton = rightFork->pickup();
-    logger.note([&](auto &out) {
-      out << "Philosopher " << id << " got right fork " << rightFork->id << ".";
-    });
+    NOTE("Philosopher " << id << " got right fork " << rightFork->id << ".");
 
-    logger.note([&](auto &out) {
-      out << "Philosopher " << id << " is eating.";
-    });
+    NOTE("Philosopher " << id << " is eating.");
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 };
@@ -142,11 +142,17 @@ public:
   }
 };
 
-bool option(const std::string &str,
+//
+// helper to process command line options,
+// if arg starts with prefix,
+// then run lambda on the rest of arg (returning true)
+// otherwise return false
+//
+bool option(const std::string &arg,
 	const std::string &pfx,
 	std::function<void (const char *rest)> match) {
-  if (str.compare(0,pfx.size(),pfx) == 0) {
-    const char *rest=str.c_str()+pfx.size();
+  if (arg.compare(0,pfx.size(),pfx) == 0) {
+    const char *rest=arg.c_str()+pfx.size();
     match(rest);
     return true;
   }
