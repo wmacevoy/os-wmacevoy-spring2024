@@ -6,6 +6,16 @@
 #include <functional>
 #include <vector>
 
+// random value in [a,b)
+uint32_t rand(uint32_t a, uint32_t b) {
+  return a + ((b > a)?rand() % (b-a) : 0);
+}
+
+
+void msSleep(uint32_t ms) {
+  std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+}
+
 //
 // Console log as a shared resource; all threads access this log.
 //
@@ -41,13 +51,27 @@ private:
 public:
   Fork(int _id)
     : id(_id) {}
-  Guard pickup() {
-    if (baton.try_lock_for(std::chrono::seconds(2))) {
+
+  // returns a shared_ptr of this fork if
+  // sucessful in locking the mutex within
+  // the msTimeout.  The shared ptr releases
+  // the lock when exiting scope.
+  //
+  Guard pickup(uint32_t msTimeout) {
+    if (baton.try_lock_for(std::chrono::milliseconds(msTimeout))) {
+      // ususual use of shared_ptr, it refers to this fork,
+      // but the destructor releases the lock.
       return std::shared_ptr < Fork > (this , [&](Fork *me) { me->baton.unlock(); });
     } else {
+      // lock aquisition failed, return a null shared pointer
       return std::shared_ptr < Fork > (nullptr);
     }
-  }  
+  }
+
+  Guard pickup() {
+    baton.lock();
+    return std::shared_ptr < Fork > (this , [&](Fork *me) { me->baton.unlock(); });
+  }
 };
 
 //
@@ -59,7 +83,7 @@ class Philosopher {
 public:
   const int id;
 private:
-  volatile bool alive;
+  std::atomic<bool> alive;
   Fork::Ptr leftFork;
   Fork::Ptr rightFork;
   std::shared_ptr < std::thread > thread;
@@ -96,18 +120,16 @@ private:
   
   void think() {
     NOTE("Philosopher " << id << " is thinking.");
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(rand(500,1500)));
   }
   
   void eat() {
     NOTE("Philosopher " << id << " is hungry.");
     auto leftBaton = leftFork->pickup();
-    if (!leftBaton) {
-      NOTE("Philosopher " << id << " leaves the table hungry.");
-      return;
-    }
+    // add pause to create more lock conflicts
+    std::this_thread::sleep_for(std::chrono::milliseconds(rand(250,500)));
     NOTE("Philosopher " << id << " got left fork " << leftFork->id << ".");
-    auto rightBaton = rightFork->pickup();
+    auto rightBaton = rightFork->pickup(rand(500,1500));
     if (!rightBaton) {
       NOTE("Philosopher " << id << " leaves the table hungry.");
       return;
@@ -115,7 +137,7 @@ private:
     NOTE("Philosopher " << id << " got right fork " << rightFork->id << ".");
 
     NOTE("Philosopher " << id << " is eating.");
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(rand(500,1500)));
   }
 };
 
